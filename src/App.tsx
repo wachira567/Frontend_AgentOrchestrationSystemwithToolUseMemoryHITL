@@ -3,11 +3,12 @@ import { TaskInput } from './components/TaskInput';
 import { ApprovalModal } from './components/ApprovalModal';
 import { TraceViewer } from './components/TraceViewer';
 import { TraceSidePanel } from './components/TraceSidePanel';
+import { ReplayModal } from './components/ReplayModal';
 import { useAgentStore } from './store/useAgentStore';
-import { Activity, Database, Terminal, GitMerge } from 'lucide-react';
+import { Activity, Database, Terminal, GitMerge, RotateCcw } from 'lucide-react';
 
 function App() {
-  const { taskState, isPolling, activeThreadId } = useAgentStore();
+  const { taskState, isPolling, activeThreadId, replaySuccessMessage } = useAgentStore();
   const [activeTab, setActiveTab] = useState<'log' | 'trace'>('trace');
 
   return (
@@ -21,14 +22,21 @@ function App() {
               <Database className="text-blue-600 w-6 h-6" />
               Agent Orchestration System
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Multi-agent LangGraph execution with HITL & Memory</p>
+            <p className="text-gray-500 text-sm mt-1">Multi-agent LangGraph execution with Time-Travel Replay & Memory</p>
           </div>
-          {isPolling && (
-            <span className="flex items-center gap-2 text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 shadow-sm">
-              <Activity className="w-4 h-4 animate-pulse" />
-              Executing Plan...
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {replaySuccessMessage && (
+              <span className="flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
+                <RotateCcw className="w-3.5 h-3.5" /> Replay Active
+              </span>
+            )}
+            {isPolling && (
+              <span className="flex items-center gap-2 text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 shadow-sm">
+                <Activity className="w-4 h-4 animate-pulse" />
+                Executing Plan...
+              </span>
+            )}
+          </div>
         </header>
 
         {/* Input Area */}
@@ -89,6 +97,9 @@ function App() {
 
       {/* Node Detail Slide-Over Panel */}
       <TraceSidePanel />
+
+      {/* Replay & Time-Travel Debugging Modal */}
+      <ReplayModal />
     </div>
   );
 }

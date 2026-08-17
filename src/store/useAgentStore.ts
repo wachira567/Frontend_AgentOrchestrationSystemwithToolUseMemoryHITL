@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { agentService } from '../services/api';
-import { TaskStateResponse, NodeTraceDetails } from '../types/agent';
+import { TaskStateResponse, NodeTraceDetails, ReplayPayload } from '../types/agent';
 
 interface AgentState {
   activeThreadId: string | null;
@@ -16,6 +16,11 @@ interface AgentState {
   isNodeDetailsLoading: boolean;
   nodeDetailsError: string | null;
 
+  // Replay & Time Travel State
+  isReplayModalOpen: boolean;
+  isReplaying: boolean;
+  replaySuccessMessage: string | null;
+
   // Actions
   submitTask: (task: string) => Promise<void>;
   fetchState: (threadId: string) => Promise<void>;
@@ -25,6 +30,9 @@ interface AgentState {
   fetchNodeDetails: (threadId: string, nodeId: string) => Promise<void>;
   closeSidePanel: () => void;
   openSidePanel: (nodeId: string) => void;
+  openReplayModal: () => void;
+  closeReplayModal: () => void;
+  replayCheckpoint: (payload: ReplayPayload) => Promise<void>;
 }
 
 let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -42,6 +50,10 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
   isNodeDetailsLoading: false,
   nodeDetailsError: null,
 
+  isReplayModalOpen: false,
+  isReplaying: false,
+  replaySuccessMessage: null,
+
   submitTask: async (task: string) => {
     set({ 
       isLoading: true, 
@@ -49,7 +61,9 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
       taskState: null,
       selectedNodeDetails: null,
       selectedNodeId: null,
-      isSidePanelOpen: false 
+      isSidePanelOpen: false,
+      isReplayModalOpen: false,
+      replaySuccessMessage: null
     });
     try {
       const response = await agentService.startTask(task);
@@ -138,6 +152,45 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
     set({ selectedNodeId: nodeId, isSidePanelOpen: true });
     if (activeThreadId) {
       fetchNodeDetails(activeThreadId, nodeId);
+    }
+  },
+
+  openReplayModal: () => {
+    set({ isReplayModalOpen: true, replaySuccessMessage: null });
+  },
+
+  closeReplayModal: () => {
+    set({ isReplayModalOpen: false });
+  },
+
+  replayCheckpoint: async (payload: ReplayPayload) => {
+    const { activeThreadId, selectedNodeDetails, startPolling, stopPolling } = get();
+    if (!activeThreadId) return;
+
+    const checkpointId = selectedNodeDetails?.checkpoint_id || selectedNodeDetails?.node_id || 'latest';
+
+    set({ isReplaying: true, error: null, replaySuccessMessage: null });
+    try {
+      stopPolling();
+      const res = await agentService.replayFromCheckpoint(activeThreadId, checkpointId, payload);
+      
+      const newThreadId = res.thread_id;
+      set({
+        activeThreadId: newThreadId,
+        isReplaying: false,
+        isReplayModalOpen: false,
+        isSidePanelOpen: false,
+        replaySuccessMessage: res.message
+      });
+
+      // Clear previous message logs and immediately start polling the forked/resumed execution
+      get().fetchState(newThreadId);
+      startPolling(newThreadId);
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.detail || error.message || 'Failed to replay from checkpoint',
+        isReplaying: false
+      });
     }
   }
 }));

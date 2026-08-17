@@ -14,7 +14,9 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
-  Activity
+  Activity,
+  RotateCcw,
+  GitFork
 } from 'lucide-react';
 
 export const TraceSidePanel: React.FC = () => {
@@ -25,7 +27,8 @@ export const TraceSidePanel: React.FC = () => {
     selectedNodeDetails,
     isNodeDetailsLoading,
     nodeDetailsError,
-    activeThreadId
+    activeThreadId,
+    openReplayModal
   } = useAgentStore();
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -91,15 +94,27 @@ export const TraceSidePanel: React.FC = () => {
             <p className="text-xs font-mono text-gray-500">
               Node ID: <span className="text-blue-600 font-semibold">{selectedNodeId}</span>
               {selectedNodeDetails?.step && ` • Step #${selectedNodeDetails.step}`}
+              {selectedNodeDetails?.checkpoint_id && ` • Ckpt: ${selectedNodeDetails.checkpoint_id.slice(0, 8)}`}
             </p>
           </div>
 
-          <button
-            onClick={closeSidePanel}
-            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedNodeDetails && (
+              <button
+                onClick={openReplayModal}
+                className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Replay or Fork execution from this node state"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Replay from Step
+              </button>
+            )}
+            <button
+              onClick={closeSidePanel}
+              className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Selection */}

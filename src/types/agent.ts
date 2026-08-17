@@ -39,6 +39,7 @@ export interface TokenUsage {
 
 export interface NodeTraceDetails {
   node_id: string;
+  checkpoint_id?: string;
   node_label: string;
   status: 'completed' | 'active' | 'pending' | 'waiting_approval' | 'skipped';
   step?: number;
@@ -50,4 +51,18 @@ export interface NodeTraceDetails {
   subtask?: SubTask | null;
   state_snapshot?: Record<string, any>;
   error?: string | null;
+}
+
+export interface ReplayPayload {
+  state_updates?: Record<string, any>;
+  modified_prompt?: string;
+  modified_response?: string;
+  fork_new_thread?: boolean;
+}
+
+export interface ReplayResponse {
+  thread_id: string;
+  checkpoint_id: string;
+  message: string;
+  forked: boolean;
 }

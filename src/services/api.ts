@@ -1,5 +1,11 @@
 import axios from 'axios';
-import { TaskCreationResponse, TaskStateResponse, NodeTraceDetails } from '../types/agent';
+import {
+  TaskCreationResponse,
+  TaskStateResponse,
+  NodeTraceDetails,
+  ReplayPayload,
+  ReplayResponse
+} from '../types/agent';
 
 // Create a centralized Axios instance
 // We don't need a full localhost URL because Vite proxies '/api' to FastAPI
@@ -47,6 +53,21 @@ export const agentService = {
    */
   getNodeTrace: async (threadId: string, nodeId: string): Promise<NodeTraceDetails> => {
     const response = await apiClient.get<NodeTraceDetails>(`/tasks/${threadId}/trace/${nodeId}`);
+    return response.data;
+  },
+
+  /**
+   * Replay and Time-Travel Debug: Fork/load a checkpoint, apply state edits, and resume execution.
+   */
+  replayFromCheckpoint: async (
+    threadId: string,
+    checkpointId: string,
+    payload: ReplayPayload
+  ): Promise<ReplayResponse> => {
+    const response = await apiClient.post<ReplayResponse>(
+      `/tasks/${threadId}/replay/${checkpointId}`,
+      payload
+    );
     return response.data;
   }
 };
