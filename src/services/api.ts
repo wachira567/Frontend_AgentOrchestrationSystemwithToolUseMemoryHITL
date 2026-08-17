@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { TaskCreationResponse, TaskStateResponse } from '../types/agent';
+import { TaskCreationResponse, TaskStateResponse, NodeTraceDetails } from '../types/agent';
 
 // Create a centralized Axios instance
 // We don't need a full localhost URL because Vite proxies '/api' to FastAPI
@@ -39,6 +39,14 @@ export const agentService = {
       approved,
       feedback,
     });
+    return response.data;
+  },
+
+  /**
+   * Fetch detailed execution trace, LLM prompts/responses, and token metrics for a specific node.
+   */
+  getNodeTrace: async (threadId: string, nodeId: string): Promise<NodeTraceDetails> => {
+    const response = await apiClient.get<NodeTraceDetails>(`/tasks/${threadId}/trace/${nodeId}`);
     return response.data;
   }
 };

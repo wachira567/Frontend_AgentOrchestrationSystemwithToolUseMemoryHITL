@@ -22,3 +22,32 @@ export interface TaskCreationResponse {
   thread_id: string;
   message: string;
 }
+
+export interface ToolInvocation {
+  id?: string;
+  name: string;
+  args: Record<string, any> | string;
+  output?: string;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd?: number;
+}
+
+export interface NodeTraceDetails {
+  node_id: string;
+  node_label: string;
+  status: 'completed' | 'active' | 'pending' | 'waiting_approval' | 'skipped';
+  step?: number;
+  timestamp?: string;
+  prompt?: string | null;
+  response?: string | null;
+  tool_calls?: ToolInvocation[];
+  token_usage?: TokenUsage | null;
+  subtask?: SubTask | null;
+  state_snapshot?: Record<string, any>;
+  error?: string | null;
+}

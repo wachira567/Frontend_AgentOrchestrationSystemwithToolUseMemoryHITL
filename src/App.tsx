@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TaskInput } from './components/TaskInput';
 import { ApprovalModal } from './components/ApprovalModal';
 import { TraceViewer } from './components/TraceViewer';
+import { TraceSidePanel } from './components/TraceSidePanel';
 import { useAgentStore } from './store/useAgentStore';
 import { Activity, Database, Terminal, GitMerge } from 'lucide-react';
 
@@ -10,7 +11,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'log' | 'trace'>('trace');
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-12 font-sans flex flex-col">
+    <div className="min-h-screen bg-gray-50 p-6 md:p-12 font-sans flex flex-col relative">
       <div className="max-w-6xl mx-auto w-full space-y-6 flex-1 flex flex-col">
         
         {/* Header */}
@@ -83,7 +84,11 @@ function App() {
 
       </div>
 
+      {/* HITL Modal Overlays the screen if triggered */}
       <ApprovalModal />
+
+      {/* Node Detail Slide-Over Panel */}
+      <TraceSidePanel />
     </div>
   );
 }

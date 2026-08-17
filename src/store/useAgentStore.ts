@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { agentService } from '../services/api';
-import { TaskStateResponse } from '../types/agent';
+import { TaskStateResponse, NodeTraceDetails } from '../types/agent';
 
 interface AgentState {
   activeThreadId: string | null;
@@ -9,12 +9,22 @@ interface AgentState {
   isPolling: boolean;
   error: string | null;
 
+  // Node Trace & Inspection State
+  selectedNodeId: string | null;
+  selectedNodeDetails: NodeTraceDetails | null;
+  isSidePanelOpen: boolean;
+  isNodeDetailsLoading: boolean;
+  nodeDetailsError: string | null;
+
   // Actions
   submitTask: (task: string) => Promise<void>;
   fetchState: (threadId: string) => Promise<void>;
   startPolling: (threadId: string) => void;
   stopPolling: () => void;
   approveTask: (approved: boolean, feedback?: string) => Promise<void>;
+  fetchNodeDetails: (threadId: string, nodeId: string) => Promise<void>;
+  closeSidePanel: () => void;
+  openSidePanel: (nodeId: string) => void;
 }
 
 let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -26,8 +36,21 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
   isPolling: false,
   error: null,
 
+  selectedNodeId: null,
+  selectedNodeDetails: null,
+  isSidePanelOpen: false,
+  isNodeDetailsLoading: false,
+  nodeDetailsError: null,
+
   submitTask: async (task: string) => {
-    set({ isLoading: true, error: null, taskState: null });
+    set({ 
+      isLoading: true, 
+      error: null, 
+      taskState: null,
+      selectedNodeDetails: null,
+      selectedNodeId: null,
+      isSidePanelOpen: false 
+    });
     try {
       const response = await agentService.startTask(task);
       set({ activeThreadId: response.thread_id, isLoading: false });
@@ -49,7 +72,6 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
       }
     } catch (error: any) {
       console.error('Error fetching state:', error);
-      // We don't necessarily set the global error state here to avoid flashing UI during polling
     }
   },
 
@@ -86,6 +108,36 @@ export const useAgentStore = create<AgentState>()((set, get) => ({
       startPolling(activeThreadId);
     } catch (error: any) {
       set({ error: error.message || 'Failed to submit approval', isLoading: false });
+    }
+  },
+
+  fetchNodeDetails: async (threadId: string, nodeId: string) => {
+    set({
+      selectedNodeId: nodeId,
+      isSidePanelOpen: true,
+      isNodeDetailsLoading: true,
+      nodeDetailsError: null
+    });
+    try {
+      const details = await agentService.getNodeTrace(threadId, nodeId);
+      set({ selectedNodeDetails: details, isNodeDetailsLoading: false });
+    } catch (error: any) {
+      set({
+        nodeDetailsError: error.response?.data?.detail || error.message || 'Failed to load trace details',
+        isNodeDetailsLoading: false
+      });
+    }
+  },
+
+  closeSidePanel: () => {
+    set({ isSidePanelOpen: false });
+  },
+
+  openSidePanel: (nodeId: string) => {
+    const { activeThreadId, fetchNodeDetails } = get();
+    set({ selectedNodeId: nodeId, isSidePanelOpen: true });
+    if (activeThreadId) {
+      fetchNodeDetails(activeThreadId, nodeId);
     }
   }
 }));
